@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Material completo de estudos sobre Fundamentos do Apache Kafka, Mensageria, Comunicação Síncrona vs Assíncrona e Arquitetura de Streaming.">
+  <title>Fundamentos do Apache Kafka & Mensageria | Guia de Estudos</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: rgba(18, 24, 38, 0.75);
+      --bg-card-hover: rgba(28, 36, 56, 0.85);
+      --bg-glass: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(255, 107, 0, 0.3);
+      
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+
+      --kafka-orange: #ff6b00;
+      --kafka-orange-glow: rgba(255, 107, 0, 0.35);
+      --cyan-neon: #00e5ff;
+      --purple-neon: #a855f7;
+      --green-neon: #10b981;
+      --red-neon: #ef4444;
+      --amber-neon: #f59e0b;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      
+      --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 30px rgba(255, 107, 0, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.65;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(255, 107, 0, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(0, 229, 255, 0.05) 0%, transparent 40%),
+        linear-gradient(to bottom, #090d16 0%, #0c1220 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f293d;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--kafka-orange);
+    }
+
+    /* Layout Containers */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 5rem 1.5rem;
+    }
+
+    /* Navigation Header */
+    .header-nav {
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(12, 18, 32, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 0.85rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--kafka-orange), #ff9800);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--kafka-orange-glow);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.75rem;
+      list-style: none;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.45rem 0.9rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.25s ease;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 3rem 1rem 3.5rem;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 1rem;
+      background: rgba(255, 107, 0, 0.12);
+      border: 1px solid rgba(255, 107, 0, 0.3);
+      border-radius: 100px;
+      color: #ff9800;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1.25rem;
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 0, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(255, 107, 0, 0.5); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: -1.2px;
+      line-height: 1.15;
+      margin-bottom: 1.2rem;
+      background: linear-gradient(135deg, #ffffff 30%, #ffaa66 75%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 0 auto 2rem;
+      font-size: 1.12rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .quick-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      text-align: left;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--kafka-orange);
+    }
+
+    .stat-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* Section Styling */
+    .section {
+      margin-top: 4rem;
+      scroll-margin-top: 6rem;
+    }
+
+    .section-header {
+      margin-bottom: 2rem;
+    }
+
+    .section-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .section-tag::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--cyan-neon);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .section-title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Comparison Grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 860px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+      .nav-links {
+        display: none;
+      }
+    }
+
+    .comp-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comp-card.sync {
+      border-top: 4px solid var(--red-neon);
+    }
+
+    .comp-card.async {
+      border-top: 4px solid var(--green-neon);
+    }
+
+    .comp-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 1rem;
+    }
+
+    .comp-card.sync .comp-badge {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red-neon);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .comp-card.async .comp-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green-neon);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .comp-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .comp-list {
+      list-style: none;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .comp-list li {
+      font-size: 0.92rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+    }
+
+    .comp-list li span.bullet-icon {
+      font-weight: 800;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .sync .bullet-icon { color: var(--red-neon); }
+    .async .bullet-icon { color: var(--green-neon); }
+
+    /* Interactive Simulator */
+    .simulator-container {
+      background: rgba(14, 20, 34, 0.9);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-top: 2rem;
+      box-shadow: var(--shadow-subtle), 0 0 30px rgba(255, 107, 0, 0.07);
+    }
+
+    .simulator-controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 1.75rem;
+    }
+
+    .sim-mode-switch {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .sim-btn-toggle {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.55rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sim-btn-toggle.active {
+      background: var(--kafka-orange);
+      color: #fff;
+      box-shadow: 0 0 12px var(--kafka-orange-glow);
+    }
+
+    .sim-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, #ff6b00, #ff8c00);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      filter: brightness(1.15);
+      transform: scale(1.02);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-toggle-fail {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--red-neon);
+      color: #ff7878;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-toggle-fail.down {
+      background: var(--red-neon);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Simulation Canvas / Nodes */
+    .sim-stage {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto 1.4fr;
+      gap: 1.5rem;
+      align-items: center;
+      min-height: 320px;
+      padding: 1rem 0;
+    }
+
+    @media (max-width: 900px) {
+      .sim-stage {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sim-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .service-node {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .service-node.active-processing {
+      border-color: var(--cyan-neon);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+      transform: scale(1.03);
+    }
+
+    .service-node.service-down {
+      opacity: 0.45;
+      border-color: var(--red-neon);
+      background: rgba(239, 68, 68, 0.05);
+      filter: grayscale(0.8);
+    }
+
+    .service-node.success {
+      border-color: var(--green-neon);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .service-info h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .service-info span {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .node-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green-neon);
+      box-shadow: 0 0 8px var(--green-neon);
+    }
+
+    .service-down .node-status-dot {
+      background: var(--red-neon);
+      box-shadow: 0 0 8px var(--red-neon);
+    }
+
+    /* Broker Middle Node */
+    .broker-hub {
+      background: linear-gradient(180deg, rgba(255, 107, 0, 0.12) 0%, rgba(20, 25, 40, 0.9) 100%);
+      border: 2px dashed var(--kafka-orange);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 180px;
+      min-height: 280px;
+      box-shadow: 0 0 25px rgba(255, 107, 0, 0.15);
+      position: relative;
+    }
+
+    .broker-queue-box {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 1rem;
+      padding: 0.6rem;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      overflow-y: auto;
+      max-height: 160px;
+    }
+
+    .msg-chip {
+      background: #ff6b00;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.35rem 0.6rem;
+      border-radius: 4px;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sim-log-terminal {
+      background: #050811;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      height: 130px;
+      overflow-y: auto;
+      margin-top: 1.5rem;
+    }
+
+    .log-line {
+      margin-bottom: 0.3rem;
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .log-line.info { color: var(--cyan-neon); }
+    .log-line.warn { color: var(--amber-neon); }
+    .log-line.error { color: var(--red-neon); }
+    .log-line.success { color: var(--green-neon); }
+
+    /* Core Concepts Grid */
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .concept-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .concept-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-4px);
+    }
+
+    .concept-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .concept-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .concept-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .concept-en-term {
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--kafka-orange);
+      font-weight: 600;
+    }
+
+    .concept-body {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      flex-grow: 1;
+    }
+
+    .concept-badge-tag {
+      margin-top: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--cyan-neon);
+      background: rgba(0, 229, 255, 0.08);
+      padding: 0.3rem 0.7rem;
+      border-radius: 4px;
+      width: fit-content;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Architecture Visualizer Diagram */
+    .arch-diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+
+    .topic-partition-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .partition-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .partition-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      min-width: 130px;
+    }
+
+    .offset-track {
+      display: flex;
+      gap: 6px;
+      flex-grow: 1;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+
+    .offset-cell {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 0.6rem 0.9rem;
+      min-width: 65px;
+      text-align: center;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .offset-cell.committed {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--green-neon);
+      color: #a7f3d0;
+    }
+
+    .offset-cell.current-head {
+      background: rgba(255, 107, 0, 0.2);
+      border-color: var(--kafka-orange);
+      color: #fff;
+    }
+
+    .offset-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .offset-val {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    /* Flashcards & Quiz */
+    .qa-accordion {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .qa-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .qa-item:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .qa-question {
+      padding: 1.25rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .qa-question::after {
+      content: '+';
+      font-size: 1.4rem;
+      color: var(--kafka-orange);
+      transition: transform 0.3s;
+    }
+
+    .qa-item.open .qa-question::after {
+      transform: rotate(45deg);
+    }
+
+    .qa-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0, 1, 0, 1), padding 0.3s ease;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.93rem;
+    }
+
+    .qa-item.open .qa-answer {
+      max-height: 500px;
+      padding: 1rem 1.5rem 1.5rem;
+      transition: max-height 0.4s ease-in-out, padding 0.3s ease;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 5rem;
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-dim);
+      font-size: 0.88rem;
+    }
+
+    .code-pill {
+      background: rgba(255, 255, 255, 0.08);
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #ffd0a8;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Navigation Header -->
+    <header class="header-nav">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </div>
+        <span>Kafka<span style="color:var(--kafka-orange)">Academy</span></span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#acoplamento" class="nav-link">Desacoplamento</a></li>
+        <li><a href="#simulador" class="nav-link">Simulador Síncrono vs Assíncrono</a></li>
+        <li><a href="#conceitos" class="nav-link">Conceitos Chave</a></li>
+        <li><a href="#arquitetura" class="nav-link">Arquitetura Interna</a></li>
+        <li><a href="#quiz" class="nav-link">Perguntas & Respostas</a></li>
+      </ul>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span>⚡ Módulo 1 & 2 • Fundamentos Teóricos</span>
+      </div>
+      <h1>Dominando o Apache Kafka:<br>Do Monólito à Mensageria Reativa</h1>
+      <p>
+        Aprenda como o Apache Kafka resolve o problema crítico do acoplamento em cascata, garante resiliência contra quedas de serviços e possibilita comunicação assíncrona de altíssima performance.
+      </p>
+
+      <!-- Quick Stats Grid -->
+      <div class="quick-stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🔄</div>
+          <div class="stat-title">Desacoplamento Total</div>
+          <div class="stat-desc">Produtores e consumidores não sabem da existência direta um do outro.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🛡️</div>
+          <div class="stat-title">Resiliência & Buffer</div>
+          <div class="stat-desc">Se um consumidor cair, as mensagens ficam retidas com segurança no Broker.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-title">Comunicação Assíncrona</div>
+          <div class="stat-desc">Trabalho em paralelo sem bloqueio de I/O ou espera por resposta síncrona.</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-title">Altíssimo Throughput</div>
+          <div class="stat-desc">Capacidade de processar milhões de eventos por segundo em tempo real.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: O Problema do Acoplamento e a Quebra do Monólito -->
+    <section id="acoplamento" class="section">
+      <div class="section-header">
+        <div class="section-tag">Análise Arquitetural</div>
+        <h2 class="section-title">1. Por que Mensageria? A Quebra do Monólito</h2>
+        <p class="section-subtitle">O dilema entre chamadas síncronas em cadeia e a liberdade dos eventos assíncronos.</p>
+      </div>
+
+      <div class="comparison-grid">
+        <!-- Card Síncrono -->
+        <div class="comp-card sync">
+          <span class="comp-badge">❌ O Cenário Problemático (Síncrono / HTTP)</span>
+          <h3 class="comp-title">Acoplamento Direto & Efeito Cascata</h3>
+          <p style="color:var(--text-muted); font-size:0.92rem;">
+            Na quebra do monólito em microsserviços usando chamadas HTTP síncronas clássicas (<span class="code-pill">REST / RPC</span>), cada serviço depende diretamente da resposta imediata do próximo.
+          </p>
+          <ul class="comp-list">
+            <li>
+              <span class="bullet-icon">✕</span>
+              <div><strong>Ponto Único de Falha:</strong> Se o serviço de <em>Antifraude</em> cair, o <em>Checkout</em> trava e falha para o usuário final.</div>
+            </li>
+            <li>
+              <span class="bullet-icon">✕</span>
+              <div><strong>Bloqueio de Tarefas Paralelas:</strong> Não é possível gerar o PDF, disparar o E-mail ou gravar os Logs se o serviço intermediário não responder.</div>
+            </li>
+            <li>
+              <span class="bullet-icon">✕</span>
+              <div><strong>Latência Cumulativa:</strong> O tempo de resposta final é a soma de todos os tempos de cada microsserviço síncrono.</div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card Assíncrono -->
+        <div class="comp-card async">
+          <span class="comp-badge">✅ O Cenário com Kafka (Assíncrono / Mensageria)</span>
+          <h3 class="comp-title">Desacoplamento & Resiliência Real</h3>
+          <p style="color:var(--text-muted); font-size:0.92rem;">
+            Ao introduzir o <strong>Apache Kafka</strong> como Broker de eventos, o serviço de Checkout apenas publica o evento no tópico e devolve sucesso instantâneo.
+          </p>
+          <ul class="comp-list">
+            <li>
+              <span class="bullet-icon">✓</span>
+              <div><strong>Processamento Independente:</strong> <em>E-mail</em>, <em>PDF</em> e <em>Logs</em> trabalham simultaneamente, cada um no seu ritmo.</div>
+            </li>
+            <li>
+              <span class="bullet-icon">✓</span>
+              <div><strong>Tolerância a Falhas:</strong> Se o <em>Antifraude</em> cair, a mensagem <strong>fica salva no Kafka</strong>. Quando o serviço subir de volta, ele lê do ponto exato onde parou!</div>
+            </li>
+            <li>
+              <span class="bullet-icon">✓</span>
+              <div><strong>Alta Escalabilidade:</strong> Novos consumidores podem ser adicionados ao tópico sem mexer em nenhuma linha do Checkout.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Simulador Interativo -->
+    <section id="simulador" class="section">
+      <div class="section-header">
+        <div class="section-tag">Laboratório Prático</div>
+        <h2 class="section-title">2. Simulador Interativo: Síncrono vs Kafka</h2>
+        <p class="section-subtitle">Experimente o comportamento do fluxo quando o serviço de Antifraude fica fora do ar.</p>
+      </div>
+
+      <div class="simulator-container">
+        <!-- Simulator Top Controls -->
+        <div class="simulator-controls">
+          <div class="sim-mode-switch">
+            <button id="btnModeAsync" class="sim-btn-toggle active" onclick="setSimMode('async')">Modo: Kafka (Assíncrono)</button>
+            <button id="btnModeSync" class="sim-btn-toggle" onclick="setSimMode('sync')">Modo: Síncrono (HTTP Direto)</button>
+          </div>
+
+          <div class="sim-actions">
+            <button id="btnToggleFraud" class="btn-toggle-fail" onclick="toggleFraudService()">
+              <span id="fraudBtnText">🚨 Derrubar Antifraude</span>
+            </button>
+            <button id="btnSendOrder" class="btn-action" onclick="runSimulation()">
+              <span>🚀 Criar Pedido (Checkout)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stage Diagram -->
+        <div class="sim-stage">
+          <!-- Col 1: Producer -->
+          <div class="sim-col">
+            <div id="nodeCheckout" class="service-node">
+              <div class="service-info">
+                <h4>🛒 Checkout Service</h4>
+                <span>Produtor (Producer)</span>
+              </div>
+              <div class="node-status-dot"></div>
+            </div>
+          </div>
+
+          <!-- Col 2: Middle Broker (Kafka) or Direct HTTP Arrows -->
+          <div class="sim-col" style="align-items:center;">
+            <div id="brokerHub" class="broker-hub">
+              <div style="font-size:1.8rem;">📦</div>
+              <div style="font-weight:800; font-size:0.95rem; color:#fff; margin-top:0.2rem;">Kafka Broker</div>
+              <div style="font-size:0.75rem; color:var(--kafka-orange); font-family:'JetBrains Mono'">topic: checkout-pedidos</div>
+              
+              <div class="broker-queue-box" id="brokerQueue">
+                <div style="font-size:0.72rem; color:var(--text-dim); text-align:center; margin-top:1.5rem;">Fila / Log Vazio</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Col 3: Consumers -->
+          <div class="sim-col">
+            <div id="nodeFraud" class="service-node">
+              <div class="service-info">
+                <h4>🛡️ Antifraude</h4>
+                <span>Consumidor de Análise</span>
+              </div>
+              <div class="node-status-dot"></div>
+            </div>
+
+            <div id="nodeEmail" class="service-node">
+              <div class="service-info">
+                <h4>📧 Notificação Email</h4>
+                <span>Consumidor de Envio</span>
+              </div>
+              <div class="node-status-dot"></div>
+            </div>
+
+            <div id="nodePdf" class="service-node">
+              <div class="service-info">
+                <h4>📄 Gerador de PDF</h4>
+                <span>Consumidor de Recibos</span>
+              </div>
+              <div class="node-status-dot"></div>
+            </div>
+
+            <div id="nodeLog" class="service-node">
+              <div class="service-info">
+                <h4>📊 Auditoria / Log</h4>
+                <span>Consumidor de Histórico</span>
+              </div>
+              <div class="node-status-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Output -->
+        <div class="sim-log-terminal" id="simTerminal">
+          <div class="log-line info">
+            <span>[SISTEMA]</span> Simulador pronto. Escolha o modo e clique em "Criar Pedido".
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Conceitos Fundamentais -->
+    <section id="conceitos" class="section">
+      <div class="section-header">
+        <div class="section-tag">Dicionário de Termos</div>
+        <h2 class="section-title">3. Os Pilares & Vocabulário do Apache Kafka</h2>
+        <p class="section-subtitle">Tudo o que você precisa dominar antes de escrever o código com Spring Boot.</p>
+      </div>
+
+      <div class="concepts-grid">
+        <!-- Producer -->
+        <div class="concept-card">
+          <div class="concept-header">
+            <div class="concept-icon-wrap" style="color:var(--kafka-orange);">📤</div>
+            <div>
+              <div class="concept-title">Produtor</div>
+              <div class="concept-en-term">Producer</div>
+            </div>
+          </div>
+          <div class="concept-body">
+            Qualquer aplicação que cria e publica mensagens/eventos para o cluster Kafka. Um produtor pode enviar eventos para um ou mais tópicos diferentes de forma não-bloqueante.
+          </div>
+          <div class="concept-badge-tag">Exemplo: API de Checkout, Sensor IoT</div>
+        </div>
+
+        <!-- Consumer -->
+        <div class="concept-card">
+          <div class="concept-header">
+            <div class="concept-icon-wrap" style="color:var(--cyan-neon);">📥</div>
+            <div>
+              <div class="concept-title">Consumidor</div>
+              <div class="concept-en-term">Consumer</div>
+            </div>
+          </div>
+          <div class="concept-body">
+            Aplicações que realizam a inscrição (<em>subscribe</em>) em um ou mais tópicos para ler e processar registros assim que estiverem disponíveis, operando no modelo <strong>Pull</strong> (busca ativa).
+          </div>
+          <div class="concept-badge-tag">Exemplo: Microserviço Antifraude, Gerador PDF</div>
+        </div>
+
+        <!-- Topic -->
+        <div class="concept-card">
+          <div class="concept-header">
+            <div class="concept-icon-wrap" style="color:var(--purple-neon);">🏷️</div>
+            <div>
+              <div class="concept-title">Tópico</div>
+              <div class="concept-en-term">Topic</div>
+            </div>
+          </div>
+          <div class="concept-body">
+            É a categoria lógica ou canal onde as mensagens são publicadas e isoladas. Funciona como uma tabela no banco de dados ou uma pasta de arquivos, agrupando eventos do mesmo contexto de negócio.
+          </div>
+          <div class="concept-badge-tag">Exemplo: topic-pedidos-criados</div>
+        </div>
+
+        <!-- Broker -->
+        <div class="concept-card">
+          <div class="concept-header">
+            <div class="concept-icon-wrap" style="color:var(--green-neon);">🏢</div>
+            <div>
+              <div class="concept-title">Broker</div>
+              <div class="concept-en-term">Kafka Broker / Node</div>
+            </div>
+          </div>
+          <div class="concept-body">
+            O servidor central do Kafka. É responsável por receber mensagens dos produtores, persistir em disco de forma sequencial (Append-Only Log) e servi-las aos consumidores de forma ultrarrápida.
+          </div>
+          <div class="concept-badge-tag">Persistência em Disco • Cache em Memória</div>
+        </div>
+
+        <!-- Cluster -->
+        <div class="concept-card">
+          <div class="concept-header">
+            <div class="concept-icon-wrap" style="color:var(--amber-neon);">🌐</div>
+            <div>
+              <div class="concept-title">Cluster Kafka</div>
+              <div class="concept-en-term">Kafka Cluster</div>
+            </div>
+          </div>
+          <div class="concept-body">
+            Conjunto de múltiplos Brokers trabalhando em harmonia. Garante alta disponibilidade, balanceamento de carga e tolerância a falhas através da replicação de dados entre os nós.
+          </div>
+          <div class="concept-badge-tag">Alta Disponibilidade • Zero Downtime</div>
+        </div>
+
+        <!-- Partition & Offset -->
+        <div class="concept-card">
+          <div class="concept-header">
+            <div class="concept-icon-wrap" style="color:#f43f5e;">📑</div>
+            <div>
+              <div class="concept-title">Partição & Offset</div>
+              <div class="concept-en-term">Partition & Offset</div>
+            </div>
+          </div>
+          <div class="concept-body">
+            Um tópico é subdividido em <strong>Partições</strong> para permitir processamento paralelo massivo. Cada mensagem dentro de uma partição ganha um ID sequencial e imutável chamado <strong>Offset</strong>.
+          </div>
+          <div class="concept-badge-tag">Ordem Garantida por Partição</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Arquitetura Interna & Partições -->
+    <section id="arquitetura" class="section">
+      <div class="section-header">
+        <div class="section-tag">Estrutura de Dados</div>
+        <h2 class="section-title">4. Como o Kafka Armazena os Dados (Log & Offset)</h2>
+        <p class="section-subtitle">Diferente de filas comuns que deletam a mensagem após o consumo, o Kafka mantém um histórico durável.</p>
+      </div>
+
+      <div class="arch-diagram-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h3 style="color:#fff; font-size:1.15rem; font-weight:700;">Tópico: <span style="color:var(--kafka-orange)">pagamentos-checkout</span></h3>
+            <span style="font-size:0.85rem; color:var(--text-muted)">Distribuído em 3 Partições paralelas no Cluster</span>
+          </div>
+          <div style="display:flex; gap:1rem; font-size:0.8rem; font-family:'JetBrains Mono'">
+            <span style="color:var(--green-neon)">● Processado (Committed)</span>
+            <span style="color:var(--kafka-orange)">● Último Offset Gravado</span>
+          </div>
+        </div>
+
+        <div class="topic-partition-diagram">
+          <!-- Partition 0 -->
+          <div class="partition-row">
+            <div class="partition-label">Partição #0</div>
+            <div class="offset-track">
+              <div class="offset-cell committed"><span class="offset-num">0</span><span class="offset-val">Ped-101</span></div>
+              <div class="offset-cell committed"><span class="offset-num">1</span><span class="offset-val">Ped-104</span></div>
+              <div class="offset-cell committed"><span class="offset-num">2</span><span class="offset-val">Ped-108</span></div>
+              <div class="offset-cell current-head"><span class="offset-num">3</span><span class="offset-val">Ped-112</span></div>
+            </div>
+          </div>
+
+          <!-- Partition 1 -->
+          <div class="partition-row">
+            <div class="partition-label">Partição #1</div>
+            <div class="offset-track">
+              <div class="offset-cell committed"><span class="offset-num">0</span><span class="offset-val">Ped-102</span></div>
+              <div class="offset-cell committed"><span class="offset-num">1</span><span class="offset-val">Ped-105</span></div>
+              <div class="offset-cell current-head"><span class="offset-num">2</span><span class="offset-val">Ped-109</span></div>
+            </div>
+          </div>
+
+          <!-- Partition 2 -->
+          <div class="partition-row">
+            <div class="partition-label">Partição #2</div>
+            <div class="offset-track">
+              <div class="offset-cell committed"><span class="offset-num">0</span><span class="offset-val">Ped-103</span></div>
+              <div class="offset-cell committed"><span class="offset-num">1</span><span class="offset-val">Ped-106</span></div>
+              <div class="offset-cell committed"><span class="offset-num">2</span><span class="offset-val">Ped-107</span></div>
+              <div class="offset-cell committed"><span class="offset-num">3</span><span class="offset-val">Ped-110</span></div>
+              <div class="offset-cell current-head"><span class="offset-num">4</span><span class="offset-val">Ped-111</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem;">
+          <div style="background:rgba(255,255,255,0.03); padding:1rem; border-radius:8px; border:1px solid var(--border-color)">
+            <h5 style="color:#fff; font-size:0.9rem; margin-bottom:0.25rem;">📌 O que é o Offset?</h5>
+            <p style="font-size:0.82rem; color:var(--text-muted)">É o marcador de posição de leitura. Cada consumidor mantém seu próprio ponteiro de offset, permitindo reler dados antigos caso necessário.</p>
+          </div>
+          <div style="background:rgba(255,255,255,0.03); padding:1rem; border-radius:8px; border:1px solid var(--border-color)">
+            <h5 style="color:#fff; font-size:0.9rem; margin-bottom:0.25rem;">💾 Persistência em Disco</h5>
+            <p style="font-size:0.82rem; color:var(--text-muted)">Os dados são gravados em arquivos de log sequenciais no disco do Broker com retenção configurável (ex: 7 dias), não sumindo após o consumo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Quiz / Perguntas & Respostas de Fixação -->
+    <section id="quiz" class="section">
+      <div class="section-header">
+        <div class="section-tag">Fixação de Conteúdo</div>
+        <h2 class="section-title">5. Perguntas & Respostas da Aula</h2>
+        <p class="section-subtitle">Clique nos cards para testar seus conhecimentos e fixar o raciocínio.</p>
+      </div>
+
+      <div class="qa-accordion">
+        <!-- Item 1 -->
+        <div class="qa-item">
+          <div class="qa-question" onclick="toggleAccordion(this)">
+            O que acontece com as mensagens se o serviço de Antifraude cair no modelo com Kafka?
+          </div>
+          <div class="qa-answer">
+            <p>
+              As mensagens continuam sendo geradas normalmente pelo <em>Checkout</em> e são <strong>armazenadas com segurança no Broker do Kafka</strong>. Os outros serviços (como E-mail, PDF e Log) continuam consumindo e funcionando perfeitamente. Quando o serviço de Antifraude for reiniciado e se reconectar ao Kafka, ele começará a ler e processar todas as mensagens acumuladas a partir do último <em>offset</em> comitado, garantindo <strong>zero perda de dados</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Item 2 -->
+        <div class="qa-item">
+          <div class="qa-question" onclick="toggleAccordion(this)">
+            Por que na arquitetura síncrona não era possível gerar o PDF ou e-mail quando a fraude caía?
+          </div>
+          <div class="qa-answer">
+            <p>
+              Porque na comunicação síncrona (<span class="code-pill">HTTP REST encadeado</span>), a execução é <strong>bloqueante</strong>. O Checkout fez uma requisição direta ao Antifraude e ficou travado esperando uma resposta. Como o Antifraude caiu e não respondeu (deu timeout ou erro de conexão), a cadeia inteira de execução foi abortada antes de chegar nas etapas de PDF e E-mail.
+            </p>
+          </div>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="qa-item">
+          <div class="qa-question" onclick="toggleAccordion(this)">
+            Qual a diferença fundamental entre um Tópico e uma Partição no Kafka?
+          </div>
+          <div class="qa-answer">
+            <p>
+              O <strong>Tópico</strong> é uma abstração lógica que categoriza as mensagens (ex: <span class="code-pill">pedidos-pagos</span>). A <strong>Partição</strong> é a divisão física real do tópico. Um único tópico pode ter 3, 10 ou 100 partições espalhadas por diferentes servidores (Brokers), o que permite leitura e escrita em paralelo de forma massiva.
+            </p>
+          </div>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="qa-item">
+          <div class="qa-question" onclick="toggleAccordion(this)">
+            Um Produtor pode enviar mensagens para mais de um Tópico?
+          </div>
+          <div class="qa-answer">
+            <p>
+              <strong>Sim!</strong> Uma mesma aplicação produtora pode se conectar ao cluster Kafka e produzir eventos para quantos tópicos de negócio forem necessários (por exemplo, disparando para <span class="code-pill">checkout-criado</span> e <span class="code-pill">logs-auditoria</span>).
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>Material de Estudos baseado nas aulas de Introdução ao Apache Kafka com Spring Boot</p>
+      <p style="margin-top:0.4rem; font-size:0.78rem;">Bons estudos e rumo à prática no código! 🚀</p>
+    </footer>
+
+  </div>
+
+  <!-- Interactive JavaScript Logic -->
+  <script>
+    let isFraudDown = false;
+    let simMode = 'async'; // 'async' or 'sync'
+    let orderCounter = 100;
+    let pendingKafkaMessages = [];
+
+    function setSimMode(mode) {
+      simMode = mode;
+      document.getElementById('btnModeAsync').classList.toggle('active', mode === 'async');
+      document.getElementById('btnModeSync').classList.toggle('active', mode === 'sync');
+      
+      const brokerHub = document.getElementById('brokerHub');
+      if (mode === 'sync') {
+        brokerHub.style.opacity = '0.3';
+        brokerHub.style.filter = 'grayscale(1)';
+        logMessage(`[MODO ALTERADO] Modo Síncrono (HTTP Direto) ativado. Não há Broker intermediário.`, 'warn');
+      } else {
+        brokerHub.style.opacity = '1';
+        brokerHub.style.filter = 'none';
+        logMessage(`[MODO ALTERADO] Modo Kafka (Assíncrono) ativado com Broker desacoplado.`, 'info');
+      }
+    }
+
+    function toggleFraudService() {
+      isFraudDown = !isFraudDown;
+      const fraudNode = document.getElementById('nodeFraud');
+      const fraudBtn = document.getElementById('btnToggleFraud');
+      const fraudBtnText = document.getElementById('fraudBtnText');
+
+      if (isFraudDown) {
+        fraudNode.classList.add('service-down');
+        fraudBtn.classList.add('down');
+        fraudBtnText.innerText = '♻️ Reativar Antifraude';
+        logMessage(`[ALERTA] Microsserviço de Antifraude CAIU (Offline)!`, 'error');
+      } else {
+        fraudNode.classList.remove('service-down');
+        fraudBtn.classList.remove('down');
+        fraudBtnText.innerText = '🚨 Derrubar Antifraude';
+        logMessage(`[RECUPERAÇÃO] Microsserviço de Antifraude VOLTOU ao ar!`, 'success');
+
+        // If Kafka mode and pending messages exist, process them
+        if (simMode === 'async' && pendingKafkaMessages.length > 0) {
+          processPendingKafkaMessages();
+        }
+      }
+    }
+
+    function logMessage(text, type = 'info') {
+      const terminal = document.getElementById('simTerminal');
+      const time = new Date().toLocaleTimeString();
+      const line = document.createElement('div');
+      line.className = `log-line ${type}`;
+      line.innerHTML = `<span>[${time}]</span> ${text}`;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    async function runSimulation() {
+      orderCounter++;
+      const orderId = `PED-${orderCounter}`;
+      const sendBtn = document.getElementById('btnSendOrder');
+      sendBtn.disabled = true;
+
+      const nodeCheckout = document.getElementById('nodeCheckout');
+      const nodeFraud = document.getElementById('nodeFraud');
+      const nodeEmail = document.getElementById('nodeEmail');
+      const nodePdf = document.getElementById('nodePdf');
+      const nodeLog = document.getElementById('nodeLog');
+
+      // Producer creates order
+      nodeCheckout.classList.add('active-processing');
+      logMessage(`🛒 Checkout gerou nova intenção de pagamento (${orderId})...`, 'info');
+      await sleep(600);
+      nodeCheckout.classList.remove('active-processing');
+
+      if (simMode === 'sync') {
+        // --- SÍNCRONO ---
+        logMessage(`🔗 [SÍNCRONO] Checkout chamando Antifraude via HTTP POST...`, 'info');
+        nodeFraud.classList.add('active-processing');
+        await sleep(700);
+
+        if (isFraudDown) {
+          nodeFraud.classList.remove('active-processing');
+          logMessage(`💥 [ERRO 500] Antifraude não respondeu (Serviço Offline)!`, 'error');
+          logMessage(`🚫 [BLOQUEIO EM CADEIA] Checkout travou. O PDF, E-mail e Logs não puderam ser gerados!`, 'error');
+        } else {
+          nodeFraud.classList.remove('active-processing');
+          nodeFraud.classList.add('success');
+          logMessage(`✅ [SÍNCRONO] Antifraude aprovou. Chamando próximos serviços...`, 'success');
+          
+          await sleep(500);
+          nodeEmail.classList.add('success');
+          nodePdf.classList.add('success');
+          nodeLog.classList.add('success');
+          logMessage(`✅ [SÍNCRONO] E-mail, PDF e Logs executados em sequência.`, 'success');
+
+          setTimeout(() => {
+            nodeFraud.classList.remove('success');
+            nodeEmail.classList.remove('success');
+            nodePdf.classList.remove('success');
+            nodeLog.classList.remove('success');
+          }, 2000);
+        }
+      } else {
+        // --- ASSÍNCRONO / KAFKA ---
+        logMessage(`⚡ [KAFKA] Checkout enviou evento para o tópico 'checkout-pedidos'.`, 'info');
+        
+        // Add to broker visual queue
+        const queueBox = document.getElementById('brokerQueue');
+        if (queueBox.children.length === 1 && queueBox.children[0].innerText.includes('Vazio')) {
+          queueBox.innerHTML = '';
+        }
+        
+        const chip = document.createElement('div');
+        chip.id = `msg-${orderId}`;
+        chip.className = 'msg-chip';
+        chip.innerHTML = `<span>${orderId}</span> <span>offset:#${queueBox.children.length}</span>`;
+        queueBox.appendChild(chip);
+
+        logMessage(`📥 [BROKER] Mensagem persistida no disco do Broker com sucesso!`, 'info');
+        await sleep(500);
+
+        // Consumers read independently
+        nodeEmail.classList.add('success');
+        nodePdf.classList.add('success');
+        nodeLog.classList.add('success');
+        logMessage(`🚀 [PARALELO] E-mail, Gerador de PDF e Logs consumiram e processaram ${orderId} imediatamente!`, 'success');
+
+        if (isFraudDown) {
+          logMessage(`⏳ [KAFKA BUFFER] Antifraude está fora do ar. A mensagem ${orderId} permanecerá retida no Broker para quando ele voltar!`, 'warn');
+          pendingKafkaMessages.push(orderId);
+        } else {
+          nodeFraud.classList.add('success');
+          logMessage(`🛡️ [KAFKA] Antifraude consumiu e validou ${orderId}.`, 'success');
+        }
+
+        setTimeout(() => {
+          nodeEmail.classList.remove('success');
+          nodePdf.classList.remove('success');
+          nodeLog.classList.remove('success');
+          nodeFraud.classList.remove('success');
+        }, 2200);
+      }
+
+      sendBtn.disabled = false;
+    }
+
+    async function processPendingKafkaMessages() {
+      const nodeFraud = document.getElementById('nodeFraud');
+      logMessage(`🔄 [KAFKA RECOVERY] Processando ${pendingKafkaMessages.length} mensagem(ns) pendente(s) acumuladas no Broker...`, 'info');
+      
+      while (pendingKafkaMessages.length > 0) {
+        const msg = pendingKafkaMessages.shift();
+        nodeFraud.classList.add('active-processing');
+        await sleep(600);
+        nodeFraud.classList.remove('active-processing');
+        nodeFraud.classList.add('success');
+        logMessage(`🛡️ [RECUPERADO] Antifraude processou com sucesso a mensagem retida: ${msg}!`, 'success');
+        await sleep(400);
+      }
+
+      setTimeout(() => {
+        nodeFraud.classList.remove('success');
+      }, 1500);
+    }
+
+    function toggleAccordion(element) {
+      const item = element.parentElement;
+      item.classList.toggle('open');
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>
